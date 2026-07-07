@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>やさいくだものPOP</title>
+  <meta name="theme-color" content="#2e7d32">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="POP">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="app-title">やさいくだものPOP</h1>
+    <button id="settingsBtn" class="icon-btn" aria-label="設定">⚙️</button>
+  </header>
+
+  <main class="container">
+    <section class="input-area">
+      <input
+        id="productInput"
+        class="product-input"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        placeholder="例: トマト / シャインマスカット"
+        aria-label="商品名">
+      <button id="generateBtn" class="primary-btn">POPを作る</button>
+    </section>
+
+    <p id="message" class="message" role="alert" hidden></p>
+
+    <section id="results" class="results" hidden>
+      <article class="card">
+        <div class="card-head">
+          <h2 class="card-title">特徴</h2>
+          <button class="copy-btn" data-target="out-feature">コピー</button>
+        </div>
+        <p id="out-feature" class="card-body"></p>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <h2 class="card-title">食べ方</h2>
+          <button class="copy-btn" data-target="out-eat">コピー</button>
+        </div>
+        <p id="out-eat" class="card-body"></p>
+      </article>
+
+      <article class="card card-pop">
+        <div class="card-head">
+          <h2 class="card-title">POPの一言</h2>
+          <button class="copy-btn" data-target="out-pop">コピー</button>
+        </div>
+        <p id="out-pop" class="card-body"></p>
+      </article>
+    </section>
+
+    <p id="placeholder" class="placeholder">商品名を入力して「POPを作る」を押してください。</p>
+  </main>
+
+  <!-- 設定モーダル -->
+  <div id="settingsModal" class="modal" hidden>
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="settingsHeading">
+      <h2 id="settingsHeading" class="modal-title">設定</h2>
+      <label for="apiKeyInput" class="field-label">Anthropic APIキー</label>
+      <input id="apiKeyInput" class="product-input" type="password" autocomplete="off" placeholder="sk-ant-...">
+      <p id="keyStatus" class="key-status"></p>
+      <p class="hint">
+        APIキーは
+        <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a>
+        で取得できます。キーはこの端末のブラウザ内(localStorage)にのみ保存されます。
+      </p>
+      <div class="modal-actions">
+        <button id="saveKeyBtn" class="primary-btn">保存</button>
+        <button id="closeSettingsBtn" class="secondary-btn">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
