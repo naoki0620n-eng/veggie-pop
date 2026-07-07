@@ -152,13 +152,20 @@ function handleGenerate() {
   callApi(apiKey, name)
     .then(function (res) {
       if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          throw { userMessage: 'APIキーが正しくないか権限がありません' };
-        }
-        if (res.status === 429) {
-          throw { userMessage: 'リクエストが多すぎます。少し待って再試行してください' };
-        }
-        throw { userMessage: 'エラーが発生しました (ステータス: ' + res.status + ')' };
+        // APIのエラーメッセージ本文を読んで、原因が分かる表示にする
+        return res.json().catch(function () { return null; }).then(function (errBody) {
+          var apiMsg = errBody && errBody.error && errBody.error.message ? errBody.error.message : '';
+          if (/credit balance is too low/i.test(apiMsg)) {
+            throw { userMessage: 'API残高が不足しています。console.anthropic.com の「資金を追加」からチャージしてください' };
+          }
+          if (res.status === 401 || res.status === 403) {
+            throw { userMessage: 'APIキーが正しくないか権限がありません' };
+          }
+          if (res.status === 429) {
+            throw { userMessage: 'リクエストが多すぎます。少し待って再試行してください' };
+          }
+          throw { userMessage: 'エラーが発生しました (ステータス: ' + res.status + (apiMsg ? ' / ' + apiMsg : '') + ')' };
+        });
       }
       return res.json();
     })
