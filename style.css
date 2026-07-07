@@ -116,6 +116,47 @@ body {
   cursor: pointer;
 }
 
+/* 写真入力 */
+.photo-btn {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--green-dark);
+  background: var(--green-light);
+  border: 2px dashed var(--green);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-img {
+  max-width: 96px;
+  max-height: 96px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.remove-photo-btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 15px;
+  color: var(--danger);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .message {
   margin: 16px 0 0;
   padding: 12px 14px;
@@ -193,6 +234,97 @@ body {
   font-size: 20px;
   font-weight: 700;
   color: var(--green-dark);
+}
+
+/* 結果カードの見出し（card-head無しレイアウト用） */
+.card > .card-title {
+  margin-bottom: 8px;
+}
+
+/* 編集可能フィールド */
+.edit-input,
+.edit-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: inherit;
+}
+
+.edit-input:focus,
+.edit-textarea:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+.edit-textarea {
+  resize: vertical;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.out-emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.name-input {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+}
+
+.card-pop .pop-textarea {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green-dark);
+  background: #fff;
+}
+
+.dish-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dish-row + .dish-row {
+  margin-top: 8px;
+}
+
+.dish-no {
+  font-weight: 700;
+  color: var(--green-dark);
+}
+
+.dish-name {
+  flex: 0 0 40%;
+  min-width: 0;
+}
+
+.dish-desc {
+  flex: 1;
+  min-width: 0;
+}
+
+.share-actions {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.share-actions .primary-btn {
+  flex: 1;
+}
+
+.share-actions .secondary-btn {
+  flex: 0 0 auto;
 }
 
 .copy-btn {

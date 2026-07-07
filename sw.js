@@ -1,6 +1,6 @@
 'use strict';
 
-var CACHE_NAME = 'veggie-pop-v2';
+var CACHE_NAME = 'veggie-pop-v3';
 var APP_SHELL = [
   '.',
   'index.html',

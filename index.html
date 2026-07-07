@@ -29,6 +29,15 @@
         autocomplete="off"
         placeholder="例: トマト / シャインマスカット"
         aria-label="商品名">
+
+      <label for="photoInput" class="photo-btn">📷 写真を選ぶ（任意）</label>
+      <input id="photoInput" class="photo-input" type="file" accept="image/*" aria-label="商品写真" hidden>
+
+      <div id="preview" class="preview" hidden>
+        <img id="previewImg" class="preview-img" alt="選択した写真">
+        <button id="removePhotoBtn" class="remove-photo-btn" type="button">×取消</button>
+      </div>
+
       <button id="generateBtn" class="primary-btn">POPを作る</button>
     </section>
 
@@ -36,31 +45,44 @@
 
     <section id="results" class="results" hidden>
       <article class="card">
-        <div class="card-head">
-          <h2 class="card-title">特徴</h2>
-          <button class="copy-btn" data-target="out-feature">コピー</button>
+        <h2 class="card-title">商品名</h2>
+        <div class="name-row">
+          <span id="out-emoji" class="out-emoji" aria-hidden="true"></span>
+          <input id="out-name" class="edit-input name-input" type="text" aria-label="商品名">
         </div>
-        <p id="out-feature" class="card-body"></p>
       </article>
 
       <article class="card">
-        <div class="card-head">
-          <h2 class="card-title">食べ方</h2>
-          <button class="copy-btn" data-target="out-eat">コピー</button>
-        </div>
-        <p id="out-eat" class="card-body"></p>
+        <h2 class="card-title">産地</h2>
+        <input id="out-origin" class="edit-input" type="text" aria-label="産地">
       </article>
 
       <article class="card card-pop">
-        <div class="card-head">
-          <h2 class="card-title">POPの一言</h2>
-          <button class="copy-btn" data-target="out-pop">コピー</button>
-        </div>
-        <p id="out-pop" class="card-body"></p>
+        <h2 class="card-title">POPの一言</h2>
+        <textarea id="out-pop" class="edit-textarea pop-textarea" rows="2" aria-label="POPの一言"></textarea>
       </article>
+
+      <article class="card">
+        <h2 class="card-title">おすすめ料理</h2>
+        <div class="dish-row">
+          <span class="dish-no">①</span>
+          <input id="out-dish1-name" class="edit-input dish-name" type="text" placeholder="料理名" aria-label="料理1の名前">
+          <input id="out-dish1-desc" class="edit-input dish-desc" type="text" placeholder="説明" aria-label="料理1の説明">
+        </div>
+        <div class="dish-row">
+          <span class="dish-no">②</span>
+          <input id="out-dish2-name" class="edit-input dish-name" type="text" placeholder="料理名" aria-label="料理2の名前">
+          <input id="out-dish2-desc" class="edit-input dish-desc" type="text" placeholder="説明" aria-label="料理2の説明">
+        </div>
+      </article>
+
+      <div class="share-actions">
+        <button id="shareBtn" class="primary-btn">LINEで共有</button>
+        <button id="copyShareBtn" class="secondary-btn">コピー</button>
+      </div>
     </section>
 
-    <p id="placeholder" class="placeholder">商品名を入力して「POPを作る」を押してください。</p>
+    <p id="placeholder" class="placeholder">写真を選ぶか商品名を入力して「POPを作る」を押してください。</p>
   </main>
 
   <!-- 設定モーダル -->

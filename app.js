@@ -5,22 +5,38 @@ var API_URL = 'https://api.anthropic.com/v1/messages';
 var API_KEY_STORAGE = 'anthropic_api_key';
 var MODEL = 'claude-sonnet-5';
 var MAX_NAME_LENGTH = 100;
+var IMAGE_MAX_SIDE = 1024;
+var IMAGE_QUALITY = 0.8;
 
 var SYSTEM_PROMPT =
-  'あなたはスーパーの青果売り場のPOP作成のプロです。ユーザーが入力した商品名について、必ず以下のJSONオブジェクトだけを返してください。前後に説明文やコードフェンスを付けないこと。形式: {"特徴":"旬・産地・味・栄養など2〜3文","食べ方":"具体的な調理法や食べ方を2〜3案、読点や改行で区切る","pop一言":"店頭で目を引く20文字前後のキャッチコピー"}\n\n正確性の厳守事項（店頭に掲示されるため誤情報は厳禁）:\n- 産地・品種の由来・数値など固有の事実は、確実に知っている場合のみ書く。不確かなら書かない（産地を推測で断定しない）。\n- 商品名に地名や産地が含まれる場合は、必ずそれをそのまま尊重する。\n- 知らない品種・商品名の場合は、産地の断定を避け、そのカテゴリ（例:すいか）の一般的な特徴・食べ方として書く。';
+  'あなたはスーパー・八百屋の青果売り場のPOP作成のプロです。写真および/または商品名から、店頭に貼るPOPの内容を作成します。必ず以下のJSONオブジェクトだけを返してください。前後に説明文やコードフェンスを付けないこと。\n形式: {"商品名":"商品名","絵文字":"商品を表す絵文字1つ","産地":"産地表記","pop一言":"手書きPOPにそのまま書ける20字前後のキャッチコピー","料理":[{"名前":"料理名","説明":"10〜20字の簡単な説明"},{"名前":"料理名","説明":"10〜20字の簡単な説明"}]}\n\n産地の書き方（店頭に掲示されるため誤情報は厳禁）:\n- 写真のラベル・箱・値札などから産地が確実に判別できた場合のみ、その産地を断定して書く。\n- 判別できない場合は推測で断定せず、「代表的な産地: ○○など」の形式で書く。\n- 商品名に地名や産地が含まれる場合は、必ずそれをそのまま尊重する。\n\nその他:\n- 写真がある場合は写真から商品を判別する。商品名の補足があればそれも考慮する。\n- 知らない品種・商品名の場合は、そのカテゴリの一般的な内容として書く。\n- 料理は必ず2品。料理名と10〜20字程度の簡単な説明をつける。';
+
+// ==== 状態 ====
+var els = {};
+var currentImageData = null; // 縮小後のdataURL（プレビュー兼API送信用）
+var currentEmoji = '';
 
 // ==== 要素参照 ====
-var els = {};
-
 function initElements() {
   els.input = document.getElementById('productInput');
   els.generateBtn = document.getElementById('generateBtn');
   els.message = document.getElementById('message');
   els.results = document.getElementById('results');
   els.placeholder = document.getElementById('placeholder');
-  els.outFeature = document.getElementById('out-feature');
-  els.outEat = document.getElementById('out-eat');
+  els.photoInput = document.getElementById('photoInput');
+  els.preview = document.getElementById('preview');
+  els.previewImg = document.getElementById('previewImg');
+  els.removePhotoBtn = document.getElementById('removePhotoBtn');
+  els.outEmoji = document.getElementById('out-emoji');
+  els.outName = document.getElementById('out-name');
+  els.outOrigin = document.getElementById('out-origin');
   els.outPop = document.getElementById('out-pop');
+  els.outDish1Name = document.getElementById('out-dish1-name');
+  els.outDish1Desc = document.getElementById('out-dish1-desc');
+  els.outDish2Name = document.getElementById('out-dish2-name');
+  els.outDish2Desc = document.getElementById('out-dish2-desc');
+  els.shareBtn = document.getElementById('shareBtn');
+  els.copyShareBtn = document.getElementById('copyShareBtn');
   els.settingsBtn = document.getElementById('settingsBtn');
   els.settingsModal = document.getElementById('settingsModal');
   els.apiKeyInput = document.getElementById('apiKeyInput');
@@ -77,6 +93,64 @@ function setLoading(loading) {
   }
 }
 
+// ==== 画像の縮小・base64化 ====
+// 長辺IMAGE_MAX_SIDE程度・JPEG品質IMAGE_QUALITYに縮小したdataURLを返す
+function loadAndResizeImage(file) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth || img.width;
+        var h = img.naturalHeight || img.height;
+        if (!w || !h) {
+          reject(new Error('bad-image'));
+          return;
+        }
+        var scale = Math.min(1, IMAGE_MAX_SIDE / Math.max(w, h));
+        var cw = Math.max(1, Math.round(w * scale));
+        var ch = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw;
+        canvas.height = ch;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        try {
+          resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = function () { reject(new Error('image-load')); };
+      img.src = reader.result;
+    };
+    reader.onerror = function () { reject(new Error('file-read')); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function handlePhotoChange(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  clearMessage();
+  loadAndResizeImage(file)
+    .then(function (dataUrl) {
+      currentImageData = dataUrl;
+      els.previewImg.src = dataUrl;
+      els.preview.hidden = false;
+    })
+    .catch(function () {
+      showError('画像の読み込みに失敗しました。別の写真をお試しください');
+    });
+}
+
+function removePhoto() {
+  currentImageData = null;
+  els.photoInput.value = '';
+  els.previewImg.removeAttribute('src');
+  els.preview.hidden = true;
+}
+
 // ==== JSON抽出 ====
 // コードフェンス等を含む可能性のあるテキストから最初の { と最後の } を取り出してパース
 function parseModelJson(raw) {
@@ -92,25 +166,98 @@ function parseModelJson(raw) {
 
 // ==== 結果表示 ====
 function renderResult(obj) {
-  var feature = obj['特徴'] || '';
-  var eat = obj['食べ方'] || '';
-  var pop = obj['pop一言'] || obj['POP一言'] || obj['pop_一言'] || '';
+  var dishes = Array.isArray(obj['料理']) ? obj['料理'] : [];
+  var d1 = dishes[0] || {};
+  var d2 = dishes[1] || {};
 
-  els.outFeature.textContent = feature;
-  els.outEat.textContent = eat;
-  els.outPop.textContent = pop;
+  currentEmoji = obj['絵文字'] || '';
+  els.outEmoji.textContent = currentEmoji;
+  els.outName.value = obj['商品名'] || '';
+  els.outOrigin.value = obj['産地'] || '';
+  els.outPop.value = obj['pop一言'] || obj['POP一言'] || obj['pop_一言'] || '';
+  els.outDish1Name.value = d1['名前'] || d1['料理名'] || '';
+  els.outDish1Desc.value = d1['説明'] || '';
+  els.outDish2Name.value = d2['名前'] || d2['料理名'] || '';
+  els.outDish2Desc.value = d2['説明'] || '';
 
   els.placeholder.hidden = true;
   els.results.hidden = false;
 }
 
+// ==== 共有テキスト生成（編集後の内容を反映） ====
+function buildShareText() {
+  var name = (els.outName.value || '').trim();
+  var origin = (els.outOrigin.value || '').trim();
+  var pop = (els.outPop.value || '').trim();
+  var d1n = (els.outDish1Name.value || '').trim();
+  var d1d = (els.outDish1Desc.value || '').trim();
+  var d2n = (els.outDish2Name.value || '').trim();
+  var d2d = (els.outDish2Desc.value || '').trim();
+
+  var lines = [];
+  lines.push((currentEmoji ? currentEmoji + ' ' : '') + name);
+  if (origin) lines.push('・産地: ' + origin);
+  if (pop) lines.push('・POP一言: ' + pop);
+
+  var dishParts = [];
+  if (d1n) dishParts.push('①' + d1n + (d1d ? '（' + d1d + '）' : ''));
+  if (d2n) dishParts.push('②' + d2n + (d2d ? '（' + d2d + '）' : ''));
+  if (dishParts.length) lines.push('・料理: ' + dishParts.join(''));
+
+  return lines.join('\n');
+}
+
+// ==== 共有 ====
+function handleShare() {
+  var text = buildShareText();
+  if (navigator.share) {
+    navigator.share({ text: text }).catch(function () {
+      // ユーザーキャンセル等は無視
+    });
+    return;
+  }
+  var url = 'https://line.me/R/share?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
+
+function handleCopyShare() {
+  var btn = els.copyShareBtn;
+  var original = btn.textContent;
+  copyText(buildShareText()).then(function () {
+    btn.textContent = 'コピー済み';
+    setTimeout(function () {
+      btn.textContent = original;
+    }, 1200);
+  });
+}
+
 // ==== API呼び出し ====
-function callApi(apiKey, productName) {
+function callApi(apiKey, productName, imageData) {
+  var content = [];
+
+  if (imageData) {
+    var base64 = imageData.indexOf(',') !== -1 ? imageData.split(',')[1] : imageData;
+    content.push({
+      type: 'image',
+      source: { type: 'base64', media_type: 'image/jpeg', data: base64 }
+    });
+  }
+
+  var instruction;
+  if (imageData && productName) {
+    instruction = '写真の商品でPOPを作ってください。商品名の補足: ' + productName;
+  } else if (imageData) {
+    instruction = '写真の商品を判別してPOPを作ってください。';
+  } else {
+    instruction = productName;
+  }
+  content.push({ type: 'text', text: instruction });
+
   var body = {
     model: MODEL,
-    max_tokens: 600,
+    max_tokens: 700,
     system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: productName }]
+    messages: [{ role: 'user', content: content }]
   };
 
   return fetch(API_URL, {
@@ -131,8 +278,8 @@ function handleGenerate() {
 
   var name = (els.input.value || '').trim();
 
-  if (!name) {
-    showError('商品名を入力してください');
+  if (!currentImageData && !name) {
+    showError('写真を選ぶか、商品名を入力してください');
     return;
   }
   if (name.length > MAX_NAME_LENGTH) {
@@ -149,7 +296,7 @@ function handleGenerate() {
 
   setLoading(true);
 
-  callApi(apiKey, name)
+  callApi(apiKey, name, currentImageData)
     .then(function (res) {
       if (!res.ok) {
         // APIのエラーメッセージ本文を読んで、原因が分かる表示にする
@@ -221,20 +368,6 @@ function fallbackCopy(text) {
   }
 }
 
-function handleCopyClick(e) {
-  var btn = e.target.closest('.copy-btn');
-  if (!btn) return;
-  var target = document.getElementById(btn.getAttribute('data-target'));
-  if (!target) return;
-  var original = btn.textContent;
-  copyText(target.textContent || '').then(function () {
-    btn.textContent = 'コピー済み';
-    setTimeout(function () {
-      btn.textContent = original;
-    }, 1200);
-  });
-}
-
 // ==== 設定モーダル ====
 function refreshKeyStatus() {
   var has = !!getApiKey();
@@ -277,7 +410,11 @@ function bindEvents() {
     }
   });
 
-  document.addEventListener('click', handleCopyClick);
+  els.photoInput.addEventListener('change', handlePhotoChange);
+  els.removePhotoBtn.addEventListener('click', removePhoto);
+
+  els.shareBtn.addEventListener('click', handleShare);
+  els.copyShareBtn.addEventListener('click', handleCopyShare);
 
   var toggleKeyBtn = document.getElementById('toggleKeyBtn');
   if (toggleKeyBtn) {
