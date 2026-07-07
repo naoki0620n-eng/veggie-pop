@@ -279,6 +279,15 @@ function bindEvents() {
 
   document.addEventListener('click', handleCopyClick);
 
+  var toggleKeyBtn = document.getElementById('toggleKeyBtn');
+  if (toggleKeyBtn) {
+    toggleKeyBtn.addEventListener('click', function () {
+      var isHidden = els.apiKeyInput.type === 'password';
+      els.apiKeyInput.type = isHidden ? 'text' : 'password';
+      toggleKeyBtn.textContent = isHidden ? '隠す' : '表示';
+    });
+  }
+
   els.settingsBtn.addEventListener('click', openSettings);
   els.closeSettingsBtn.addEventListener('click', closeSettings);
   els.saveKeyBtn.addEventListener('click', handleSaveKey);

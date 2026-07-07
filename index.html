@@ -68,7 +68,10 @@
     <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="settingsHeading">
       <h2 id="settingsHeading" class="modal-title">設定</h2>
       <label for="apiKeyInput" class="field-label">Anthropic APIキー</label>
-      <input id="apiKeyInput" class="product-input" type="password" autocomplete="off" placeholder="sk-ant-...">
+      <div class="key-input-row">
+        <input id="apiKeyInput" class="product-input" type="password" autocomplete="off" placeholder="sk-ant-...">
+        <button id="toggleKeyBtn" class="copy-btn" type="button">表示</button>
+      </div>
       <p id="keyStatus" class="key-status"></p>
       <p class="hint">
         APIキーは

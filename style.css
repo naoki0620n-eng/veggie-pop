@@ -282,3 +282,14 @@ body {
 .modal-actions .primary-btn { flex: 1; }
 
 [hidden] { display: none !important; }
+
+/* APIキー入力行（表示トグル付き） */
+.key-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.key-input-row .product-input {
+  flex: 1;
+  min-width: 0;
+}
